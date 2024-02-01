@@ -233,6 +233,89 @@ def pep(session):
     response = get_response(session, pep_url)
     if response is None:
         return
+
+    soup = BeautifulSoup(response.text, features='lxml')
+    section = find_tag(soup, 'section', attrs={'id': 'numerical-index'})
+    # section = find_tag(soup, 'section', attrs={'id': 'index-by-category'})
+    a_tags = section.find_all(name='a', attrs={'class': 'pep reference internal'})
+
+    results = [('Статус', 'Количество')]
+
+    peps = []
+    peps_d = {}
+    statuses = []
+    counts = {}
+
+    pattern = r'^\d+$'
+
+    # re.compile(r'field-even|field-odd')
+
+    count = 0
+
+    for a_tag in tqdm(a_tags):
+    # for a_tag in a_tags:
+        # Поиск паттерна в ссылке.
+        text_match = re.search(pattern, a_tag.text)
+
+        if text_match is not None:
+            # Если строка соответствует паттерну,
+            # переменным присываивается содержимое групп, начиная с первой.
+            href = a_tag['href']
+            pep_link = urljoin(pep_url, href)
+
+            response = get_response(session, pep_link)
+            if response is None:
+                # Если страница не загрузится, программа перейдёт к следующей ссылке.
+                continue
+
+            count += 1
+            # Сварите "супчик".
+            soup = BeautifulSoup(response.text, features='lxml')
+            # soup = BeautifulSoup(response.text)
+            dl = find_tag(soup, 'dl', attrs={'class': 'rfc2822 field-list simple'})
+            # print(count)
+            # print(status_dds)
+            status_abbr = find_tag(dl, 'abbr')
+            # for status_dd in status_dds:
+            #     # status_abbr = find_tag(status_dd, 'abbr')
+            #     print(status_dd)
+            status = status_abbr.text
+            if status in counts:
+                counts[status] += 1
+            else:
+                counts[status] = 1
+
+            peps.append((pep_link, status))
+            peps_d[pep_link] = status
+            statuses.append(status)
+
+            # print(count, pep_link, status)
+
+            # type_dd = find_tag(soup, 'dd', attrs={'class': 'field-even'})
+            # type_abbr = find_tag(type_dd, 'abbr')
+            # type = type_abbr.text
+
+        # # Добавление полученных переменных в список в виде кортежа.
+        # results.append(
+        #     (link, version, status)
+        # )
+
+    # # Печать результата.
+    # for row in results:
+    #     print(*row)
+    # return peps_d
+    # print(peps_d)
+    # print(counts)
+    # results = [(key, val) for key, val in counts.items()]
+    result_count = 0
+    for key, val in counts.items():
+        results.append((key, val))
+        result_count += val
+    # results.insert(0, ('Статус', 'Количество'))
+    # print(result_count)
+    results.append(('Total', result_count))
+    return results
+
     # Пиши код!
 
 
