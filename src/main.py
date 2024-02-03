@@ -20,7 +20,8 @@ def whats_new(session):
 
     response = get_response(session, whats_new_url)
     if response is None:
-        return
+        logging.info(f'Получен пустой ответ при запросе {whats_new_url}')
+        return None
 
     soup = BeautifulSoup(response.text, features='lxml')
 
@@ -59,7 +60,8 @@ def latest_versions(session):
     """Ссылки на документацию для каждой версии и её статус."""
     response = get_response(session, MAIN_DOC_URL)
     if response is None:
-        return
+        logging.info(f'Получен пустой ответ при запросе {MAIN_DOC_URL}')
+        return None
 
     soup = BeautifulSoup(response.text, features='lxml')
 
@@ -71,8 +73,8 @@ def latest_versions(session):
         if 'All versions' in ul.text:
             a_tags = ul.find_all('a')
             break
-        else:
-            raise Exception('Ничего не нашлось')
+    else:
+        raise Exception('Ничего не нашлось')
 
     results = [('Ссылка на документацию', 'Версия', 'Статус')]
 
@@ -101,6 +103,7 @@ def download(session):
 
     response = get_response(session, downloads_url)
     if response is None:
+        logging.info(f'Получен пустой ответ при запросе {downloads_url}')
         return
 
     soup = BeautifulSoup(response.text, features='lxml')
@@ -123,6 +126,9 @@ def download(session):
     archive_path = downloads_dir / filename
 
     response = session.get(archive_url)
+    if response is None:
+        logging.info(f'Получен пустой ответ при запросе {archive_url}')
+        return
 
     with open(archive_path, 'wb') as file:
         file.write(response.content)
@@ -136,7 +142,8 @@ def pep(session):
 
     response = get_response(session, pep_url)
     if response is None:
-        return
+        logging.info(f'Получен пустой ответ при запросе {pep_url}')
+        return None
 
     soup = BeautifulSoup(response.text, features='lxml')
 
@@ -146,6 +153,7 @@ def pep(session):
         name='tr', attrs={'class': re.compile(r'row-(even|odd)')}
     )
 
+    status_mismatch = ['\nНесовпадающие статусы:\n']
     status_counts = {}
 
     for tr_tag in tqdm(tr_tags):
@@ -168,10 +176,9 @@ def pep(session):
         status = status_abbr_tag.text
 
         if status not in EXPECTED_STATUS[status_key]:
-            logging.info(
-                f'Несовпадающий статус у {pep_link}'
-                f' Статус на странице {status}'
-                f' Ожидаемый статус {EXPECTED_STATUS[status_key]}'
+            status_mismatch.append(
+                f'{pep_link}\nВ карточке: {status}\n'
+                f'Ожидаемые: {EXPECTED_STATUS[status_key]}\n'
             )
 
         if status in status_counts:
@@ -179,12 +186,12 @@ def pep(session):
         else:
             status_counts[status] = 1
 
+    if len(status_mismatch) > 1:
+        logging.info('\n'.join(status_mismatch))
+
     results = [('Статус', 'Количество')]
-    peps_counter = 0
-    for key, value in status_counts.items():
-        results.append((key, value))
-        peps_counter += value
-    results.append(('Total', peps_counter))
+    results.extend(status_counts.items())
+    results.append(('Total', sum(status_counts.values())))
 
     return results
 
