@@ -1,3 +1,4 @@
+"""Парсер документации Python для командной строки."""
 import logging
 import os
 import re
@@ -14,6 +15,7 @@ from utils import find_tag, get_response
 
 
 def whats_new(session):
+    """Ссылки на документы «Что нового?» для каждой версии."""
     whats_new_url = urljoin(MAIN_DOC_URL, 'whatsnew/')
 
     response = get_response(session, whats_new_url)
@@ -54,6 +56,7 @@ def whats_new(session):
 
 
 def latest_versions(session):
+    """Ссылки на документацию для каждой версии и её статус."""
     response = get_response(session, MAIN_DOC_URL)
     if response is None:
         return
@@ -93,6 +96,7 @@ def latest_versions(session):
 
 
 def download(session):
+    """Скачивание документации в pdf для последней версии."""
     downloads_url = urljoin(MAIN_DOC_URL, 'download.html')
 
     response = get_response(session, downloads_url)
@@ -127,9 +131,10 @@ def download(session):
 
 
 def pep(session):
+    """Количество PEP каждого статуса."""
     pep_url = urljoin(MAIN_PEP_URL, '')
 
-    response = get_response(session, MAIN_PEP_URL)
+    response = get_response(session, pep_url)
     if response is None:
         return
 
@@ -193,6 +198,7 @@ MODE_TO_FUNCTION = {
 
 
 def main():
+    """Запуск парсера."""
     configure_logging()
     logging.info('Парсер запущен!')
 

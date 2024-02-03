@@ -1,3 +1,4 @@
+"""Вывод результата в командную строку и файл."""
 import csv
 import datetime as dt
 import logging
@@ -8,6 +9,7 @@ from constants import BASE_DIR, DATETIME_FORMAT
 
 
 def control_output(results, cli_args):
+    """Выбор вывода в зависимости от аргумента в командной строке."""
     output = cli_args.output
 
     if output == 'pretty':
@@ -19,11 +21,13 @@ def control_output(results, cli_args):
 
 
 def default_output(results):
+    """Выводу командную строку по умолчанию."""
     for row in results:
         print(*row)
 
 
 def pretty_output(results):
+    """Выводу командную строку с форматированием в виде таблицы."""
     table = PrettyTable()
     table.field_names = results[0]
     table.align = 'l'
@@ -32,6 +36,7 @@ def pretty_output(results):
 
 
 def file_output(results, cli_args):
+    """Сохранение в CSV-файл."""
     results_dir = BASE_DIR / 'results'
     results_dir.mkdir(exist_ok=True)
     parser_mode = cli_args.mode
